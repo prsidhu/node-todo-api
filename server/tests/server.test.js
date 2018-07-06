@@ -1,5 +1,6 @@
 const expect = require('expect')
 const request = require('supertest')
+const {ObjectID} = require('mongodb')
 
 const {app} = require('./../server')
 const {Todo} = require('./../models/todo')
@@ -7,9 +8,11 @@ const {Todo} = require('./../models/todo')
 
 const todos = [
     {
+        _id: new ObjectID(),
         text: 'test 1'
     },
     {
+        _id: new ObjectID(),
         text: 'text 2'
     }
 ]
@@ -73,6 +76,39 @@ describe('GET /todos', () => {
             .expect(200)
             .expect((res) => {
                 expect(res.body.todos.length).toBe(2)
+            })
+            .end(done)
+    })
+})
+
+describe('GET /todos/:id', () => {
+    it('should return a 404 for invalid id', (done) => {
+        request(app)
+            .get('/todos/123')
+            .expect(404)
+            .expect((res) => {
+                expect(res.body.error).toBe('Invalid id')
+            })
+            .end(done)
+    })
+
+    it('should return a todo', (done) => {
+        request(app)
+            .get(`/todos/${todos[0]._id.toHexString()}`)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todo.text).toBe(todos[0].text)
+            })
+            .end(done)
+    })
+
+    it('should not return todo for valid but absent id', (done) => {
+        var hexId = new ObjectID().toHexString()
+        request(app)
+            .get(`/todos/${hexId}`)
+            .expect(404)
+            .expect((res) => {
+                expect(res.body.error).toBe('no todo found for the given id')
             })
             .end(done)
     })
