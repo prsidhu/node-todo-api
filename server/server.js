@@ -11,6 +11,7 @@ var mongoose = require('./db/mongoose')
 var {Todo} = require('./models/todo')
 var {User} = require('./models/user')
 var {authenticate} = require('./middleware/authenticate')
+const {assignAnnotationApi} = require('./api/annotations')
 
 var app = express()
 const port = process.env.PORT || 3000
@@ -101,29 +102,29 @@ app.patch('/todos/:id', authenticate, (req, res) => {
     }).catch((e) => res.status(400).send())
 })
 
-app.post('/users', (req, res) => {
+app.post('/users', async (req, res) => {
     var body = _.pick(req.body, ['email', 'password'])
     var user = new User(body)
-
-    user.save().then(() => {
-        return user.generateAuthToken()
-    }).then((token) => {
+    try{
+        await user.save()
+        var token = await user.generateAuthToken()
         res.header('x-auth', token).send(user)
-    }).catch((e) => res.status(400).send(e))
+    } catch(e) {res.status(400).send(e)}
 })
 
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user)
 })
 
-app.post('/users/login', (req, res) => {
-    var body = _.pick(req.body, ['email', 'password'])
-
-    User.findByCredentials(body.email, body.password).then((user) => {
-        return user.generateAuthToken().then((token) => {
-            res.header('x-auth', token).send(user)
-        })
-    }).catch((e) => res.status(400).send(e))
+app.post('/users/login', async (req, res) => {
+    try {
+        const body = _.pick(req.body, ['email', 'password'])
+        let user = await User.findByCredentials(body.email, body.password)
+        let token = await user.generateAuthToken()
+        res.header('x-auth', token).send(user)
+    } catch(e) {
+        res.status(400).send(e)
+    }
 })
 
 app.delete('/users/me/token', authenticate, (req, res) => {
@@ -131,6 +132,8 @@ app.delete('/users/me/token', authenticate, (req, res) => {
         res.status(200).send()
     }, () => res.status(400).send())
 })
+
+
 
 app.listen(port, () => {
     console.log(`running on ${port}`)
