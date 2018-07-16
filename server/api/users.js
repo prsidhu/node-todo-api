@@ -5,7 +5,6 @@ var {authenticate} = require('../middleware/authenticate')
 var {User} = require('../models/user')
 
 const assignUsersRoutes = (app) => {
-    console.log('here! 2')
     app.post('/users', async (req, res) => {
         console.log('post users')
         var body = _.pick(req.body, ['email', 'password'])

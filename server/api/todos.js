@@ -6,7 +6,6 @@ var {authenticate} = require('../middleware/authenticate')
 
 
 const assignTodoRoutes = (app) => {
-    console.log('here! 3')
     app.post('/todos', authenticate, (req, res) => {
         var todo = new Todo({
             text: req.body.text,
